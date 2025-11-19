@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "MemorialAvroSchema",
+  "namespace": "windeath44.server.memorial.avro",
+  "fields": [
+    {"name": "memorialId", "type": "long"},
+    {"name": "writerId", "type": "string"},
+    {"name": "content", "type": "string"},
+    {"name": "characterId", "type": "long"}
+  ]
+}
