@@ -111,6 +111,32 @@ class PineconeVectorStore:
         except Exception as e:
             raise
 
+    def fetch(
+        self,
+        ids: str | list[str],
+        namespace: Optional[str] = None
+    ) -> dict:
+        """
+        사용 예시:
+            >>> result = store.fetch("memorial-123")
+            >>> exists = "memorial-123" in result.get("vectors", {})
+        """
+        try:
+            ns = namespace or self.namespace
+            
+            if isinstance(ids, str):
+                ids = [ids]
+            
+            response = self.index.fetch(
+                ids=ids,
+                namespace=ns
+            )
+            
+            return response
+        
+        except Exception as e:
+            raise
+
     def delete(
         self,
         ids: str | list[str],

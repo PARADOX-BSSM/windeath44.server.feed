@@ -41,8 +41,11 @@ async def process_memorial_delete_message(data: dict) -> None:
     try:
         memorial_id = data.get('memorialId')
         if memorial_id:
-            await memorial_service.delete_memorial(memorial_id)
-            logger.info(f"Successfully deleted memorial vector: {memorial_id}")
+            success = await memorial_service.delete_memorial(memorial_id, data)
+            if success:
+                logger.info(f"Successfully deleted memorial vector and published response: {memorial_id}")
+            else:
+                logger.error(f"Failed to delete memorial vector: {memorial_id}")
         else:
             logger.warning("Received delete message without memorialId")
     except Exception as e:
@@ -160,6 +163,10 @@ async def lifespan(app: FastAPI):
         memorial_service = MemorialVectorizingService()
         logger.info("Memorial Vectorizing Service initialized")
 
+        # Initialize publisher
+        await memorial_service.initialize_publisher()
+        logger.info("Kafka publisher initialized")
+
         listener_task = asyncio.create_task(start_listener())
         logger.info("Kafka listener started")
 
@@ -177,6 +184,11 @@ async def lifespan(app: FastAPI):
 
     await stop_listener()
     await stop_delete_listener()
+    
+    # Close publisher
+    if memorial_service:
+        await memorial_service.close_publisher()
+        logger.info("Kafka publisher closed")
 app = FastAPI(
     title="Feed Service",
     description="Memorial vectorizing service with Kafka integration",
