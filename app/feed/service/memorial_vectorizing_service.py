@@ -13,6 +13,7 @@ from typing import Optional
 import os
 from dotenv import load_dotenv
 from core.embedder import Embedder
+from core.util import vector_id_generator
 from core.vectorstores import PineconeVectorStore
 from core.clients import CharacterAPIClient
 
@@ -132,7 +133,7 @@ class MemorialVectorizingService:
         metadata: dict
     ) -> bool:
         try:
-            vector_id = f"memorial-{memorial_id}"
+            vector_id = vector_id_generator.create_vector_id(memorial_id)
 
             self.vectorstore.upsert(
                 id=vector_id,
@@ -146,7 +147,7 @@ class MemorialVectorizingService:
 
     async def delete_memorial(self, memorial_id: int) -> bool:
         try:
-            vector_id = f"memorial-{memorial_id}"
+            vector_id = vector_id_generator.create_vector_id(memorial_id)
 
             self.vectorstore.delete(vector_id)
 
