@@ -27,12 +27,7 @@ class MemorialVectorDeleteService:
     async def initialize_publisher(self) -> None:
         """Initialize the Kafka publisher for response events."""
         if self.publisher is None:
-            bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-            schema_registry_url = os.getenv('SCHEMA_REGISTRY_URL', 'http://localhost:8081')
-            
             self.publisher = AvroKafkaPublisher(
-                bootstrap_servers=bootstrap_servers,
-                schema_registry_url=schema_registry_url,
                 client_id="memorial-vector-delete-response-publisher"
             )
             await self.publisher.start()

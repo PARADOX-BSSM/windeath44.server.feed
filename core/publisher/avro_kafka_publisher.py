@@ -27,8 +27,8 @@ class AvroKafkaPublisher:
     
     def __init__(
         self,
-        bootstrap_servers: str | list[str],
-        schema_registry_url: str,
+        bootstrap_servers: Optional[str | list[str]] = None,
+        schema_registry_url: Optional[str] = None,
         default_subject: Optional[str] = None,
         client_id: Optional[str] = None,
         compression_type: Optional[str] = "gzip",
@@ -42,8 +42,8 @@ class AvroKafkaPublisher:
         Initialize Avro Kafka Publisher.
         
         Args:
-            bootstrap_servers: Kafka broker addresses
-            schema_registry_url: Schema Registry URL
+            bootstrap_servers: Kafka broker addresses (defaults to env KAFKA_BOOTSTRAP_SERVERS)
+            schema_registry_url: Schema Registry URL (defaults to env SCHEMA_REGISTRY_URL)
             default_subject: Default subject for schema registration
             client_id: Client identifier
             compression_type: Compression type
@@ -53,8 +53,10 @@ class AvroKafkaPublisher:
             schema_registry_auth: Optional (username, password) for Schema Registry
             **kwargs: Additional producer configuration
         """
-        self.bootstrap_servers = bootstrap_servers
-        self.schema_registry_url = schema_registry_url
+        import os
+        
+        self.bootstrap_servers = bootstrap_servers or os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+        self.schema_registry_url = schema_registry_url or os.getenv('SCHEMA_REGISTRY_URL', 'http://localhost:8081')
         self.default_subject = default_subject
         self.client_id = client_id or "avro-kafka-publisher"
         self.compression_type = compression_type
