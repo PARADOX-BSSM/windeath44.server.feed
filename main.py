@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
-from core.listener import MemorialListener, MemorialDeleteListener
+from core.listener import MemorialVectorListener, MemorialDeleteListener
 from app.feed.service import MemorialVectorizingService
 
 load_dotenv()
@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-memorial_listener: MemorialListener | None = None
+memorial_listener: MemorialVectorListener | None = None
 memorial_delete_listener: MemorialDeleteListener | None = None
 listener_task: asyncio.Task | None = None
 delete_listener_task: asyncio.Task | None = None
@@ -60,7 +60,7 @@ async def start_listener() -> None:
 
         logger.info(f"Initializing Memorial Kafka Listener: {bootstrap_servers}")
 
-        memorial_listener = MemorialListener(
+        memorial_listener = MemorialVectorListener(
             bootstrap_servers=bootstrap_servers,
             schema_registry_url=schema_registry_url,
             group_id=group_id,
