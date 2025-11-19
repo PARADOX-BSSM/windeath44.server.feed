@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from core.listener import MemorialListener
+from app.feed.service import MemorialVectorizingService
 
 load_dotenv()
 
@@ -23,23 +24,12 @@ logger = logging.getLogger(__name__)
 memorial_listener: MemorialListener | None = None
 listener_task: asyncio.Task | None = None
 
+memorial_service: MemorialVectorizingService | None = None
+
 
 async def process_memorial_message(data: dict) -> None:
-
     try:
-        memorial_id = data.get('memorialId')
-        writer_id = data.get('writerId')
-        content = data.get('content')
-        character_id = data.get('characterId')
-
-        logger.info(
-            f"Processing memorial vectorizing request: "
-            f"memorialId={memorial_id}, writerId={writer_id}, "
-            f"characterId={character_id}"
-        )
-
-        logger.info(f"Successfully processed memorial {memorial_id}")
-
+        await memorial_service.process_memorial(data)
     except Exception as e:
         logger.error(f"Error processing memorial message: {e}", exc_info=True)
         raise
@@ -97,17 +87,27 @@ async def stop_listener() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global listener_task
+    global listener_task, memorial_service
 
     logger.info("Starting Feed Service")
-    listener_task = asyncio.create_task(start_listener())
+
+    try:
+        memorial_service = MemorialVectorizingService()
+        logger.info("Memorial Vectorizing Service initialized")
+
+        listener_task = asyncio.create_task(start_listener())
+        logger.info("Kafka listener started")
+
+    except Exception as e:
+        logger.error(f"Error during startup: {e}", exc_info=True)
+        raise
 
     yield
 
+    # Shutdown
     logger.info("Shutting down Feed Service")
+
     await stop_listener()
-
-
 app = FastAPI(
     title="Feed Service",
     description="Memorial vectorizing service with Kafka integration",

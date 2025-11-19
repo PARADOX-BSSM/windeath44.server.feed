@@ -1,0 +1,3 @@
+"""
+Feed application module.
+"""

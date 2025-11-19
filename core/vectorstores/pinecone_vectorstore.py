@@ -29,9 +29,6 @@ class PineconeVectorStore:
             raise ValueError("Pinecone index name is required")
 
         self.pc = Pinecone(api_key=self.api_key)
-
-        self._ensure_index_exists()
-
         self.index = self.pc.Index(self.index_name)
 
 
