@@ -1,0 +1,45 @@
+{
+  "type": "record",
+  "name": "FeedAvroSchema",
+  "namespace": "windeath44.server.memorial.avro",
+  "doc": "Schema for memorial feed vectorization requests",
+  "fields": [
+    {
+      "name": "actionType",
+      "type": {
+        "type": "enum",
+        "name": "ActionType",
+        "symbols": ["CREATE", "UPDATE"]
+      },
+    },
+    {
+      "name": "memorialId",
+      "type": "long",
+    },
+    {
+      "name": "writerId",
+      "type": "string",
+    },
+    {
+      "name": "content",
+      "type": "string",
+    },
+    {
+      "name": "characterId",
+      "type": "long",
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "metadata",
+      "type": ["null", {
+        "type": "map",
+        "values": "string"
+      }],
+      "default": null
+    }
+  ]
+}
