@@ -174,3 +174,27 @@ class PineconeVectorStore:
 
         except Exception as e:
             raise
+
+    def query(
+        self,
+        vector: list[float],
+        top_k: int = 10,
+        namespace: Optional[str] = None,
+        include_metadata: bool = True,
+        include_values: bool = False
+    ) -> dict:
+        try:
+            ns = namespace or self.namespace
+            
+            response = self.index.query(
+                vector=vector,
+                top_k=top_k,
+                namespace=ns,
+                include_metadata=include_metadata,
+                include_values=include_values
+            )
+            
+            return response
+        
+        except Exception as e:
+            raise

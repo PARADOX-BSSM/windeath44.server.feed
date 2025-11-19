@@ -201,6 +201,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Include routers
+from api.routers.feed_router import router as feed_router
+app.include_router(feed_router)
+
 
 @app.get("/")
 async def root():
