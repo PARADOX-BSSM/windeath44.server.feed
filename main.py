@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from core.listener import MemorialVectorListener, MemorialDeleteListener
-from app.feed.service import MemorialVectorizingService
+from app.feed.service import MemorialVectorStoreService, MemorialVectorDeleteService
 
 load_dotenv()
 
@@ -26,12 +26,13 @@ memorial_delete_listener: MemorialDeleteListener | None = None
 listener_task: asyncio.Task | None = None
 delete_listener_task: asyncio.Task | None = None
 
-memorial_service: MemorialVectorizingService | None = None
+memorial_store_service: MemorialVectorStoreService | None = None
+memorial_delete_service: MemorialVectorDeleteService | None = None
 
 
 async def process_memorial_message(data: dict) -> None:
     try:
-        await memorial_service.process_memorial(data)
+        await memorial_store_service.process_memorial(data)
     except Exception as e:
         logger.error(f"Error processing memorial message: {e}", exc_info=True)
         raise
@@ -39,15 +40,7 @@ async def process_memorial_message(data: dict) -> None:
 
 async def process_memorial_delete_message(data: dict) -> None:
     try:
-        memorial_id = data.get('memorialId')
-        if memorial_id:
-            success = await memorial_service.delete_memorial(memorial_id, data)
-            if success:
-                logger.info(f"Successfully deleted memorial vector and published response: {memorial_id}")
-            else:
-                logger.error(f"Failed to delete memorial vector: {memorial_id}")
-        else:
-            logger.warning("Received delete message without memorialId")
+        await memorial_delete_service.delete_memorial(data)
     except Exception as e:
         logger.error(f"Error processing memorial delete message: {e}", exc_info=True)
         raise
@@ -155,18 +148,26 @@ async def stop_delete_listener() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global listener_task, delete_listener_task, memorial_service
+    global listener_task, delete_listener_task, memorial_store_service, memorial_delete_service
 
     logger.info("Starting Feed Service")
 
     try:
-        memorial_service = MemorialVectorizingService()
-        logger.info("Memorial Vectorizing Service initialized")
+        # Initialize services
+        memorial_store_service = MemorialVectorStoreService()
+        logger.info("Memorial Vector Store Service initialized")
 
-        # Initialize publisher
-        await memorial_service.initialize_publisher()
-        logger.info("Kafka publisher initialized")
+        memorial_delete_service = MemorialVectorDeleteService()
+        logger.info("Memorial Vector Delete Service initialized")
 
+        # Initialize publishers
+        await memorial_store_service.initialize_publisher()
+        logger.info("Store service publisher initialized")
+
+        await memorial_delete_service.initialize_publisher()
+        logger.info("Delete service publisher initialized")
+
+        # Start listeners
         listener_task = asyncio.create_task(start_listener())
         logger.info("Kafka listener started")
 
@@ -185,10 +186,14 @@ async def lifespan(app: FastAPI):
     await stop_listener()
     await stop_delete_listener()
     
-    # Close publisher
-    if memorial_service:
-        await memorial_service.close_publisher()
-        logger.info("Kafka publisher closed")
+    # Close publishers
+    if memorial_store_service:
+        await memorial_store_service.close_publisher()
+        logger.info("Store service publisher closed")
+    
+    if memorial_delete_service:
+        await memorial_delete_service.close_publisher()
+        logger.info("Delete service publisher closed")
 app = FastAPI(
     title="Feed Service",
     description="Memorial vectorizing service with Kafka integration",
