@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
-from listener import MemorialListener
+from core.listener import MemorialListener
 
 load_dotenv()
 
