@@ -4,3 +4,4 @@ data-processing.ipynb
 .serena
 .idea
 .env
+local-test/**

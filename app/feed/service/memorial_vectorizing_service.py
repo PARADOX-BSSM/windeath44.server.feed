@@ -79,6 +79,7 @@ class MemorialVectorizingService:
                 return None
 
             filtered_data = self.character_client.filter_character_data(character_data)
+            return filtered_data
 
         except Exception as e:
             return None
