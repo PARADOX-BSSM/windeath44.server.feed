@@ -10,23 +10,23 @@
         "type": "enum",
         "name": "ActionType",
         "symbols": ["CREATE", "UPDATE"]
-      },
+      }
     },
     {
       "name": "memorialId",
-      "type": "long",
+      "type": "long"
     },
     {
       "name": "writerId",
-      "type": "string",
+      "type": "string"
     },
     {
       "name": "content",
-      "type": "string",
+      "type": "string"
     },
     {
       "name": "characterId",
-      "type": "long",
+      "type": "long"
     },
     {
       "name": "timestamp",
