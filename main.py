@@ -1,14 +1,12 @@
-"""
-Feed Service - FastAPI Application with Kafka Listener Integration.
-"""
-
 import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from dotenv import load_dotenv
+from starlette.responses import JSONResponse
 
+from core.exceptions import BusinessException
 from core.listener import MemorialVectorListener, MemorialDeleteListener
 from app.feed.service import MemorialVectorStoreService, MemorialVectorDeleteService
 
@@ -19,6 +17,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 
 
 memorial_listener: MemorialVectorListener | None = None
@@ -200,6 +199,25 @@ app = FastAPI(
     version="0.1.1",
     lifespan=lifespan
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request : Request, exc: Exception):
+    if isinstance(exc, BusinessException):
+        print("error:", exc.message)
+        print("status code:", exc.status_code)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "message": exc.message,
+                "status": exc.status_code
+            },
+        )
+    print("error:", str(exc))
+    return JSONResponse(status_code=500, content={
+                "message": str(exc),
+                "status": 500
+            })
+
 
 # Include routers
 from api.routers.feed_router import router as feed_router

@@ -26,16 +26,19 @@ async def get_feeds(
                 days=days,
                 top_k=size
             )
-            
+
             if result is None:
                 raise HTTPException(
                     status_code=500,
                     detail="Failed to search feeds"
                 )
-            
+
+            search_results = result.get("search_results", {})
+            matches = search_results.get("matches", [])
+
             return {
-                "status": "success",
-                "data": result
+                "message": "successfully get feeds",
+                "data": matches
             }
             
         finally:

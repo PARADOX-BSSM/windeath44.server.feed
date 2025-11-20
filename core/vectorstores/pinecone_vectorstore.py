@@ -118,9 +118,21 @@ class PineconeVectorStore:
         namespace: Optional[str] = None
     ) -> dict:
         """
+        Fetch vectors by IDs.
+
         사용 예시:
             >>> result = store.fetch("memorial-123")
             >>> exists = "memorial-123" in result.get("vectors", {})
+
+        Args:
+            ids: Single ID or list of IDs to fetch
+            namespace: Optional namespace
+
+        Returns:
+            Dictionary containing fetched vectors
+
+        Raises:
+            VectorStoreException: If fetch operation fails
         """
         try:
             ns = namespace or self.namespace
@@ -133,7 +145,29 @@ class PineconeVectorStore:
                 namespace=ns
             )
 
-            return response
+            # Convert Pinecone response to dict for JSON serialization
+            # Handle different Pinecone SDK versions
+            if hasattr(response, 'to_dict'):
+                return response.to_dict()
+            elif hasattr(response, 'model_dump'):
+                return response.model_dump()
+            else:
+                # Manual conversion for older versions
+                result = {
+                    "vectors": {},
+                    "namespace": ns
+                }
+
+                if hasattr(response, 'vectors') and response.vectors:
+                    for vid, vector_obj in response.vectors.items():
+                        vector_dict = {"id": vid}
+                        if hasattr(vector_obj, 'values') and vector_obj.values:
+                            vector_dict["values"] = list(vector_obj.values)
+                        if hasattr(vector_obj, 'metadata') and vector_obj.metadata:
+                            vector_dict["metadata"] = dict(vector_obj.metadata)
+                        result["vectors"][vid] = vector_dict
+
+                return result
 
         except Exception as e:
             raise VectorStoreException("fetch", str(e))
@@ -184,6 +218,22 @@ class PineconeVectorStore:
         include_metadata: bool = True,
         include_values: bool = False
     ) -> dict:
+        """
+        Query for similar vectors.
+
+        Args:
+            vector: Query vector
+            top_k: Number of results to return
+            namespace: Optional namespace
+            include_metadata: Whether to include metadata in results
+            include_values: Whether to include vector values in results
+
+        Returns:
+            Dictionary containing query results
+
+        Raises:
+            VectorStoreException: If query operation fails
+        """
         try:
             ns = namespace or self.namespace
 
@@ -195,7 +245,32 @@ class PineconeVectorStore:
                 include_values=include_values
             )
 
-            return response
+            # Convert Pinecone response to dict for JSON serialization
+            # Handle different Pinecone SDK versions
+            if hasattr(response, 'to_dict'):
+                return response.to_dict()
+            elif hasattr(response, 'model_dump'):
+                return response.model_dump()
+            else:
+                # Manual conversion for older versions
+                result = {
+                    "matches": [],
+                    "namespace": ns
+                }
+
+                if hasattr(response, 'matches') and response.matches:
+                    for match in response.matches:
+                        match_dict = {
+                            "id": match.id,
+                            "score": match.score if hasattr(match, 'score') else 0.0,
+                        }
+                        if include_metadata and hasattr(match, 'metadata') and match.metadata:
+                            match_dict["metadata"] = dict(match.metadata)
+                        if include_values and hasattr(match, 'values') and match.values:
+                            match_dict["values"] = list(match.values)
+                        result["matches"].append(match_dict)
+
+                return result
 
         except Exception as e:
             raise VectorStoreException("query", str(e))

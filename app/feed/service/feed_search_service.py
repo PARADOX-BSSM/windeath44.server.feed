@@ -44,17 +44,41 @@ class FeedSearchService:
         top_k: int = 10
     ) -> dict:
         try:
-            logger.info(f"Fetching recent memorials for user {user_id}")
-            recent_memorials = await self.memorial_client.get_recent_memorials(
+            logger.info(f"Fetching recent memorial visits for user {user_id}")
+            recent_visits = await self.memorial_client.get_recent_memorials(
                 user_id=user_id,
                 days=days
             )
 
-            if recent_memorials is None:
+            if recent_visits is None:
                 raise MemorialNotFoundException(user_id, "API 호출 실패")
 
+            if not recent_visits:
+                logger.info(f"No recent memorial visits found for user {user_id}")
+                return {
+                    "user_id": user_id,
+                    "recent_memorials": [],
+                    "search_results": {"matches": []}
+                }
+
+            memorial_ids = self._extract_memorial_ids(recent_visits)
+
+            if not memorial_ids:
+                logger.warning("No valid memorial IDs found in visit records")
+                return {
+                    "user_id": user_id,
+                    "recent_memorials": [],
+                    "search_results": {"matches": []}
+                }
+
+            logger.info(f"Fetching {len(memorial_ids)} memorials by IDs")
+            recent_memorials = await self.memorial_client.get_memorials_by_ids(memorial_ids)
+
+            if recent_memorials is None:
+                raise MemorialNotFoundException(user_id, "추모관 데이터 조회 실패")
+
             if not recent_memorials:
-                logger.info(f"No recent memorials found for user {user_id}")
+                logger.warning("No memorial data found for the IDs")
                 return {
                     "user_id": user_id,
                     "recent_memorials": [],
@@ -71,6 +95,7 @@ class FeedSearchService:
                     "recent_memorials": recent_memorials,
                     "search_results": {"matches": []}
                 }
+
 
             embeddings = self.embedder.embed_texts(memorial_texts)
             avg_embedding = self._average_embeddings(embeddings)
@@ -99,19 +124,26 @@ class FeedSearchService:
             logger.error(f"Unexpected error searching feeds for user {user_id}: {e}", exc_info=True)
             raise SearchException(str(e))
 
-    def _prepare_memorial_texts(self, memorials: list[dict]) -> list[str]:
-        """
-        Prepare memorial data for vectorization.
+    def _extract_memorial_ids(self, visit_records: list[dict]) -> list[int]:
+        memorial_ids = []
+        for record in visit_records:
+            memorial_id = record.get('memorialId')
+            if memorial_id is not None:
+                memorial_ids.append(memorial_id)
+            else:
+                logger.warning(f"Visit record missing memorialId: {record}")
 
-        Extracts relevant text fields from memorial data.
-        """
+        unique_ids = list(dict.fromkeys(memorial_ids))
+        logger.info(f"Extracted {len(unique_ids)} unique memorial IDs from {len(visit_records)} visit records")
+
+        return unique_ids
+
+    def _prepare_memorial_texts(self, memorials: list[dict]) -> list[str]:
         texts = []
         
         for memorial in memorials:
-            # Adjust field names based on actual memorial API response structure
             parts = []
-            
-            # Add relevant fields that should be vectorized
+
             if 'name' in memorial:
                 parts.append(f"Name: {memorial['name']}")
             if 'description' in memorial:
@@ -131,18 +163,6 @@ class FeedSearchService:
         return texts
 
     def _average_embeddings(self, embeddings: list[list[float]]) -> list[float]:
-        """
-        Average multiple embeddings into a single embedding vector.
-
-        Args:
-            embeddings: List of embedding vectors
-
-        Returns:
-            Averaged embedding vector
-
-        Raises:
-            EmptyEmbeddingListException: If embeddings list is empty
-        """
         if not embeddings:
             raise EmptyEmbeddingListException()
 
@@ -160,6 +180,5 @@ class FeedSearchService:
         return avg_embedding
 
     async def close(self):
-        """Close clients and cleanup resources."""
         await self.memorial_client.close()
         logger.info("Feed Search Service closed")
