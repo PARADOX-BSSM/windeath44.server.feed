@@ -9,6 +9,7 @@ import logging
 import os
 from typing import Optional
 import httpx
+from core.exceptions import APIClientException
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,8 @@ class CharacterAPIClient:
 
     async def get_character(self, character_id: int) -> Optional[dict]:
         """
+        Fetch character data from API.
+
         캐릭터 데이터:
             {
                 "characterId": 0,
@@ -41,6 +44,15 @@ class CharacterAPIClient:
                 "causeOfDeathDetails": "string",
                 "saying": "string"
             }
+
+        Args:
+            character_id: The character ID to fetch
+
+        Returns:
+            Character data or None if not found
+
+        Raises:
+            APIClientException: If API call fails
         """
         try:
             url = f"{self.base_url}/animes/characters/{character_id}"
@@ -50,7 +62,6 @@ class CharacterAPIClient:
             response.raise_for_status()
 
             data = response.json()
-
             character_data = data.get('data')
 
             if not character_data:
@@ -69,15 +80,27 @@ class CharacterAPIClient:
                 f"HTTP error fetching character {character_id}: "
                 f"status={e.response.status_code}"
             )
-            return None
+            raise APIClientException(
+                "Character API",
+                e.response.status_code,
+                f"캐릭터 조회 실패 (characterId={character_id})"
+            )
 
         except httpx.RequestError as e:
             logger.error(f"Request error fetching character {character_id}: {e}")
-            return None
+            raise APIClientException(
+                "Character API",
+                500,
+                f"네트워크 오류: {e}"
+            )
 
         except Exception as e:
             logger.error(f"Unexpected error fetching character {character_id}: {e}")
-            return None
+            raise APIClientException(
+                "Character API",
+                500,
+                f"예상치 못한 오류: {e}"
+            )
 
     def filter_character_data(self, character_data: dict) -> dict:
         excluded_fields = {'imageUrl', 'memorialCommitId', 'deathOfDay'}

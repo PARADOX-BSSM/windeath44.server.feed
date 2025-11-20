@@ -13,10 +13,10 @@ router = APIRouter(prefix="/feeds", tags=["feeds"])
 async def get_feeds(
     user_id: str = Header(..., alias="user-id"),
     days: int = Query(default=7, ge=1, le=30, description="Number of days to look back"),
-    top_k: int = Query(default=10, ge=1, le=100, description="Number of results to return")
+    size: int = Query(default=10, ge=1, le=100, description="Number of results to return")
 ):
     try:
-        logger.info(f"Getting feeds for user {user_id}, days={days}, top_k={top_k}")
+        logger.info(f"Getting feeds for user {user_id}, days={days}, top_k={size}")
         
         feed_service = FeedSearchService()
         
@@ -24,7 +24,7 @@ async def get_feeds(
             result = await feed_service.search_feeds(
                 user_id=user_id,
                 days=days,
-                top_k=top_k
+                top_k=size
             )
             
             if result is None:

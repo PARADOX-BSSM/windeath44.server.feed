@@ -2,6 +2,7 @@ import os
 from typing import Optional, Any
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from core.exceptions import VectorStoreException
 
 load_dotenv()
 
@@ -71,7 +72,7 @@ class PineconeVectorStore:
             return response
 
         except Exception as e:
-            raise
+            raise VectorStoreException("upsert", str(e))
 
     def upsert_batch(
         self,
@@ -109,7 +110,7 @@ class PineconeVectorStore:
 
             return {"upserted_count": total_vectors}
         except Exception as e:
-            raise
+            raise VectorStoreException("upsert_batch", str(e))
 
     def fetch(
         self,
@@ -123,19 +124,19 @@ class PineconeVectorStore:
         """
         try:
             ns = namespace or self.namespace
-            
+
             if isinstance(ids, str):
                 ids = [ids]
-            
+
             response = self.index.fetch(
                 ids=ids,
                 namespace=ns
             )
-            
+
             return response
-        
+
         except Exception as e:
-            raise
+            raise VectorStoreException("fetch", str(e))
 
     def delete(
         self,
@@ -156,7 +157,7 @@ class PineconeVectorStore:
             return response
 
         except Exception as e:
-            raise
+            raise VectorStoreException("delete", str(e))
 
     def delete_all(
         self,
@@ -173,7 +174,7 @@ class PineconeVectorStore:
             return response
 
         except Exception as e:
-            raise
+            raise VectorStoreException("delete_all", str(e))
 
     def query(
         self,
@@ -185,7 +186,7 @@ class PineconeVectorStore:
     ) -> dict:
         try:
             ns = namespace or self.namespace
-            
+
             response = self.index.query(
                 vector=vector,
                 top_k=top_k,
@@ -193,8 +194,8 @@ class PineconeVectorStore:
                 include_metadata=include_metadata,
                 include_values=include_values
             )
-            
+
             return response
-        
+
         except Exception as e:
-            raise
+            raise VectorStoreException("query", str(e))
