@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import os
 from typing import Optional, Any
 from pinecone import Pinecone, ServerlessSpec
@@ -275,9 +274,3 @@ class PineconeVectorStore:
 
         except Exception as e:
             raise VectorStoreException("query", str(e))
-=======
-
-class PineconeVectorStore:
-    pass
-
->>>>>>> f27728b (feat :: pincone & embedder)
