@@ -5,3 +5,4 @@ data-processing.ipynb
 .idea
 .env
 local-test/**
+__pycache__

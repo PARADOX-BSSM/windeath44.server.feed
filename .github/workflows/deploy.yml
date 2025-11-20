@@ -1,0 +1,22 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  
+jobs:
+  build-deploy:
+    uses: PARADOX-BSSM/windeath44.manifest.cicd/.github/workflows/release.yml@master
+    with:
+      deploy_repo: 'PARADOX-BSSM/windeath44.manifest.values'
+      deploy_path_prefix: 'prod'
+      docker_owner: 'windeath44'
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
